@@ -40,21 +40,40 @@ regd_users.post("/login", (req, res) => {
 regd_users.put("/auth/review/:isbn", (req, res) => {
   const isbn = req.params.isbn;
   const review = req.query.review;
-  const username = req.session.authorization?.username;
+
+  let username;
+
+  if (req.session && req.session.authorization && req.session.authorization.username) {
+    username = req.session.authorization.username;
+  } else if (req.headers.cookie) {
+    try {
+      const tokenCookie = req.headers.cookie
+        .split("; ")
+        .find((c) => c.startsWith("authorization="));
+
+      if (tokenCookie) {
+        const tokenData = decodeURIComponent(tokenCookie.split("=")[1]);
+        const parsed = JSON.parse(tokenData);
+        username = parsed.username;
+      }
+    } catch (err) {
+      return res.status(401).json({ message: "Invalid cookie/session format" });
+    }
+  }
 
   if (!username) {
-    return res.status(401).json({ message: "User not logged in" });
+    return res.status(401).json({ message: "User not logged in or session invalid" });
   }
 
   if (!books[isbn]) {
     return res.status(404).json({ message: "Book not found" });
   }
 
-  // Add or update review
   books[isbn].reviews[username] = review;
 
   return res.status(200).json({ message: "Review added/updated successfully", reviews: books[isbn].reviews });
 });
+
 
 // Task 9: Delete a book review
 regd_users.delete("/auth/review/:isbn", (req, res) => {

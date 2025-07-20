@@ -72,7 +72,7 @@ public_users.get('/review/:isbn', function (req, res) {
 // Task 6: Register a new user
 public_users.post("/register", (req, res) => {
     const { username, password } = req.body;
-  
+  console.log(req.body)
     if (!username || !password) {
       return res.status(400).json({ message: "Username and password are required" });
     }
